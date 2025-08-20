@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizational Communication Transformation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 95vw;
+            height: 95vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            animation: fadeIn 1.5s ease-in;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .visualization {
+            flex: 2;
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .phase-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+
+        .phase-card.active {
+            border-color: #667eea;
+            transform: translateX(10px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .phase-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .phase-card .icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .phase-card p {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .metrics {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .metrics h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .metric-bar {
+            flex: 1;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 0 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 1s ease;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .core-values {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 200px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .core-values.visible {
+            opacity: 1;
+        }
+
+        .core-values h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .value-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .value-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .button-container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .play-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .play-button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Transforming Organizations Through Communication Design</h1>
+            <p>Watch how rewiring communication patterns around core values strengthens culture and performance</p>
+        </div>
+        
+        <div class="content">
+            <div class="visualization">
+                <canvas id="networkCanvas"></canvas>
+                <div class="core-values" id="coreValues">
+                    <h4>Core Values</h4>
+                    <div class="value-item">
+                        <div class="value-dot"></div>
+                        <span>Collaboration</span>
+                    </div>
+                    <div class="value-item">
+                        <div class="value-dot"></div>
+                        <span>Innovation</span>
+                    </div>
+                    <div class="value-item">
+                        <div class="value-dot"></div>
+                        <span>Transparency</span>
+                    </div>
+                    <div class="value-item">
+                        <div class="value-dot"></div>
+                        <span>Empowerment</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="phase-card active" data-phase="1">
+                    <h3>
+                        <span class="icon">1</span>
+                        Siloed Organization
+                    </h3>
+                    <p>Isolated departments with minimal cross-functional communication. Information bottlenecks and slow decision-making.</p>
+                </div>
+                
+                <div class="phase-card" data-phase="2">
+                    <h3>
+                        <span class="icon">2</span>
+                        Breaking Barriers
+                    </h3>
+                    <p>Introducing bridge connections between departments. Creating pathways for knowledge sharing.</p>
+                </div>
+                
+                <div class="phase-card" data-phase="3">
+                    <h3>
+                        <span class="icon">3</span>
+                        Values-Based Design
+                    </h3>
+                    <p>Restructuring around core values. Building communities of practice and innovation hubs.</p>
+                </div>
+                
+                <div class="phase-card" data-phase="4">
+                    <h3>
+                        <span class="icon">4</span>
+                        High Performance
+                    </h3>
+                    <p>Optimized network with balanced connectivity. Rapid information flow and strong cultural alignment.</p>
+                </div>
+                
+                <div class="metrics">
+                    <h3>Performance Metrics</h3>
+                    <div class="metric-item">
+                        <span>Innovation</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="innovationBar" style="width: 20%"></div>
+                        </div>
+                        <span class="metric-value" id="innovationValue">20%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Collaboration</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="collaborationBar" style="width: 15%"></div>
+                        </div>
+                        <span class="metric-value" id="collaborationValue">15%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Efficiency</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="efficiencyBar" style="width: 30%"></div>
+                        </div>
+                        <span class="metric-value" id="efficiencyValue">30%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Culture</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="cultureBar" style="width: 25%"></div>
+                        </div>
+                        <span class="metric-value" id="cultureValue">25%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <button class="play-button" onclick="playAnimation()">Play Full Transformation</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationId;
+        let currentPhase = 1;
+        let nodes = [];
+        let connections = [];
+        let particles = [];
+        let time = 0;
+
+        // Resize canvas
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Node class
+        class Node {
+            constructor(x, y, department, role, isLeader = false) {
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.department = department;
+                this.role = role;
+                this.isLeader = isLeader;
+                this.radius = isLeader ? 12 : 8;
+                this.connections = [];
+                this.pulsePhase = Math.random() * Math.PI * 2;
+            }
+
+            update() {
+                // Smooth movement to target
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                this.vx = this.vx * 0.8 + dx * 0.1;
+                this.vy = this.vy * 0.8 + dy * 0.1;
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw() {
+                const pulse = Math.sin(time * 0.02 + this.pulsePhase) * 0.15 + 1;
+                const radius = this.radius * pulse;
+
+                // Glow effect
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, radius * 2);
+                const colors = {
+                    'Engineering': ['#667eea', '#764ba2'],
+                    'Sales': ['#f093fb', '#f5576c'],
+                    'Marketing': ['#4facfe', '#00f2fe'],
+                    'Operations': ['#43e97b', '#38f9d7'],
+                    'HR': ['#fa709a', '#fee140']
+                };
+                
+                const deptColors = colors[this.department] || ['#667eea', '#764ba2'];
+                gradient.addColorStop(0, deptColors[0]);
+                gradient.addColorStop(1, deptColors[1] + '40');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Node
+                ctx.fillStyle = deptColors[0];
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Leader indicator
+                if (this.isLeader) {
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Connection class
+        class Connection {
+            constructor(node1, node2, strength = 1) {
+                this.node1 = node1;
+                this.node2 = node2;
+                this.strength = strength;
+                this.particleTimer = 0;
+                this.active = true;
+            }
+
+            update() {
+                this.particleTimer++;
+                if (this.particleTimer % 30 === 0 && this.active) {
+                    particles.push(new Particle(this.node1, this.node2));
+                }
+            }
+
+            draw() {
+                if (!this.active) return;
+                
+                const opacity = this.strength * 0.3;
+                ctx.strokeStyle = `rgba(102, 126, 234, ${opacity})`;
+                ctx.lineWidth = this.strength * 2;
+                ctx.beginPath();
+                ctx.moveTo(this.node1.x, this.node1.y);
+                ctx.lineTo(this.node2.x, this.node2.y);
+                ctx.stroke();
+            }
+        }
+
+        // Particle class for information flow
+        class Particle {
+            constructor(startNode, endNode) {
+                this.startNode = startNode;
+                this.endNode = endNode;
+                this.progress = 0;
+                this.speed = 0.02 + Math.random() * 0.02;
+                this.size = 3 + Math.random() * 2;
+            }
+
+            update() {
+                this.progress += this.speed;
+                return this.progress < 1;
+            }
+
+            draw() {
+                const x = this.startNode.x + (this.endNode.x - this.startNode.x) * this.progress;
+                const y = this.startNode.y + (this.endNode.y - this.startNode.y) * this.progress;
+                
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.size);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                gradient.addColorStop(1, 'rgba(102, 126, 234, 0.3)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Initialize network for phase 1 (Siloed)
+        function initPhase1() {
+            nodes = [];
+            connections = [];
+            particles = [];
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const departments = ['Engineering', 'Sales', 'Marketing', 'Operations', 'HR'];
+            const angleStep = (Math.PI * 2) / departments.length;
+            
+            departments.forEach((dept, deptIndex) => {
+                const deptAngle = angleStep * deptIndex;
+                const deptX = centerX + Math.cos(deptAngle) * 200;
+                const deptY = centerY + Math.sin(deptAngle) * 200;
+                
+                // Create department cluster
+                const leaderNode = new Node(deptX, deptY, dept, 'Leader', true);
+                nodes.push(leaderNode);
+                
+                // Add team members
+                for (let i = 0; i < 4; i++) {
+                    const angle = (Math.PI * 2 / 4) * i;
+                    const x = deptX + Math.cos(angle) * 40;
+                    const y = deptY + Math.sin(angle) * 40;
+                    const memberNode = new Node(x, y, dept, 'Member');
+                    nodes.push(memberNode);
+                    
+                    // Connect to leader
+                    connections.push(new Connection(leaderNode, memberNode, 0.8));
+                }
+            });
+            
+            updateMetrics(20, 15, 30, 25);
+        }
+
+        // Phase 2: Breaking barriers
+        function initPhase2() {
+            // Add cross-department connections
+            const leaders = nodes.filter(n => n.isLeader);
+            for (let i = 0; i < leaders.length; i++) {
+                for (let j = i + 1; j < leaders.length; j++) {
+                    if (Math.random() > 0.5) {
+                        connections.push(new Connection(leaders[i], leaders[j], 0.4));
+                    }
+                }
+            }
+            
+            updateMetrics(35, 40, 45, 40);
+        }
+
+        // Phase 3: Values-based design
+        function initPhase3() {
+            document.getElementById('coreValues').classList.add('visible');
+            
+            // Reorganize nodes around value clusters
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            nodes.forEach((node, index) => {
+                const angle = (Math.PI * 2 / nodes.length) * index;
+                const radius = 150 + Math.random() * 100;
+                node.targetX = centerX + Math.cos(angle) * radius;
+                node.targetY = centerY + Math.sin(angle) * radius;
+            });
+            
+            // Add more strategic connections
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    if (nodes[i].department !== nodes[j].department && Math.random() > 0.7) {
+                        connections.push(new Connection(nodes[i], nodes[j], 0.3));
+                    }
+                }
+            }
+            
+            updateMetrics(60, 70, 65, 75);
+        }
+
+        // Phase 4: High performance
+        function initPhase4() {
+            // Optimize network structure
+            connections.forEach(conn => {
+                conn.strength = Math.min(conn.strength * 1.5, 1);
+                conn.active = true;
+            });
+            
+            // Add innovation hubs
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            for (let i = 0; i < 3; i++) {
+                const angle = (Math.PI * 2 / 3) * i;
+                const x = centerX + Math.cos(angle) * 100;
+                const y = centerY + Math.sin(angle) * 100;
+                const hubNode = new Node(x, y, 'Innovation', 'Hub', true);
+                nodes.push(hubNode);
+                
+                // Connect hubs to various nodes
+                nodes.forEach(node => {
+                    if (Math.random() > 0.8 && node !== hubNode) {
+                        connections.push(new Connection(hubNode, node, 0.6));
+                    }
+                });
+            }
+            
+            updateMetrics(90, 95, 85, 95);
+        }
+
+        // Update metrics
+        function updateMetrics(innovation, collaboration, efficiency, culture) {
+            const metrics = [
+                { id: 'innovation', value: innovation },
+                { id: 'collaboration', value: collaboration },
+                { id: 'efficiency', value: efficiency },
+                { id: 'culture', value: culture }
+            ];
+            
+            metrics.forEach(metric => {
+                document.getElementById(`${metric.id}Bar`).style.width = `${metric.value}%`;
+                document.getElementById(`${metric.id}Value`).textContent = `${metric.value}%`;
+            });
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw connections
+            connections.forEach(conn => {
+                conn.update();
+                conn.draw();
+            });
+            
+            // Update and draw particles
+            particles = particles.filter(particle => {
+                const alive = particle.update();
+                if (alive) particle.draw();
+                return alive;
+            });
+            
+            // Update and draw nodes
+            nodes.forEach(node => {
+                node.update();
+                node.draw();
+            });
+            
+            time++;
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // Phase selection
+        document.querySelectorAll('.phase-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const phase = parseInt(this.dataset.phase);
+                setPhase(phase);
+            });
+        });
+
+        function setPhase(phase) {
+            currentPhase = phase;
+            document.querySelectorAll('.phase-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector(`[data-phase="${phase}"]`).classList.add('active');
+            
+            if (phase === 1) {
+                document.getElementById('coreValues').classList.remove('visible');
+                initPhase1();
+            } else if (phase === 2) {
+                initPhase1();
+                setTimeout(() => initPhase2(), 100);
+            } else if (phase === 3) {
+                initPhase1();
+                setTimeout(() => initPhase2(), 100);
+                setTimeout(() => initPhase3(), 200);
+            } else if (phase === 4) {
+                initPhase1();
+                setTimeout(() => initPhase2(), 100);
+                setTimeout(() => initPhase3(), 200);
+                setTimeout(() => initPhase4(), 300);
+            }
+        }
+
+        // Play full animation
+        function playAnimation() {
+            setPhase(1);
+            setTimeout(() => setPhase(2), 2000);
+            setTimeout(() => setPhase(3), 4000);
+            setTimeout(() => setPhase(4), 6000);
+        }
+
+        // Initialize
+        initPhase1();
+        animate();
+    </script>
+</body>
+</html>
