@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Science of Organizational Networks</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #4C32CC 0%, #6B46C1 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .container {
+            width: min(98vw, 1400px);
+            max-height: calc(100vh - 20px);
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 22px 30px;
+            background: linear-gradient(135deg, #4C32CC 0%, #6B46C1 100%);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 10s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            font-weight: 300;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            padding: 24px;
+            gap: 24px;
+            background: #f8f9fa;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .visualization {
+            flex: 2;
+            position: relative;
+            background: #fafafa;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            min-height: 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .phase-indicator {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: white;
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+            max-width: 290px;
+            transition: all 0.4s ease;
+        }
+
+        .phase-indicator .phase-number {
+            font-size: 0.7em;
+            font-weight: 600;
+            color: #4C32CC;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .phase-indicator .phase-title {
+            font-size: 1.05em;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+
+        .phase-indicator .phase-description {
+            font-size: 0.78em;
+            color: #555;
+            line-height: 1.45;
+        }
+
+        .comm-indicator {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            background: white;
+            padding: 11px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .comm-indicator .pulse-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        .comm-indicator .pulse-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 152, 0, 0); }
+        }
+
+        .comm-indicator .comm-text {
+            font-size: 0.73em;
+            color: #555;
+        }
+
+        .comm-indicator .comm-text strong {
+            display: block;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .legend {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: white;
+            padding: 10px 13px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.7em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-line {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            max-width: 340px;
+            min-width: 300px;
+            overflow-y: auto;
+        }
+
+        /* Org Size Input */
+        .org-size-control {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .org-size-control label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .org-size-input-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .org-size-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+        }
+
+        .org-size-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4C32CC 0%, #6B46C1 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(76, 50, 204, 0.4);
+        }
+
+        .org-size-value {
+            min-width: 70px;
+            padding: 6px 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #4C32CC;
+            text-align: center;
+        }
+
+        /* Phase Cards */
+        .phases-container {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .phases-header {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 14px;
+        }
+
+        .phase-card {
+            padding: 16px 18px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .phase-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .phase-card:hover {
+            background: #f0f0f0;
+        }
+
+        .phase-card.active {
+            border-color: #4C32CC;
+            background: linear-gradient(135deg, #f8f6ff 0%, #f0ebff 100%);
+        }
+
+        .phase-card .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .phase-card .phase-num {
+            width: 24px;
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72em;
+            font-weight: 700;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .phase-card.active .phase-num {
+            background: linear-gradient(135deg, #4C32CC 0%, #6B46C1 100%);
+            color: white;
+        }
+
+        .phase-card .card-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .phase-card .card-insight {
+            display: none;
+        }
+
+        /* Play Button */
+        .play-container {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .play-button {
+            width: 100%;
+            background: linear-gradient(135deg, #4C32CC 0%, #6B46C1 100%);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 10px;
+            font-size: 0.92em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 50, 204, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .play-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 50, 204, 0.4);
+        }
+
+        .play-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Metrics Panel */
+        .metrics-panel {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .metrics-header {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 14px;
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .metric-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .metric-label {
+            min-width: 130px;
+            font-size: 0.75em;
+            color: #666;
+        }
+
+        .metric-bar {
+            flex: 1;
+            height: 8px;
+            background: #e8e8e8;
+            border-radius: 4px;
+            margin: 0 10px;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+            background: linear-gradient(90deg, #4C32CC 0%, #6B46C1 100%);
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #4C32CC;
+            min-width: 36px;
+            text-align: right;
+            font-size: 0.8em;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 14px 0;
+        }
+
+        .main-logo {
+            height: 60px;
+            transition: transform 0.3s ease;
+        }
+
+        .main-logo:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 1000px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .controls {
+                max-width: none;
+                min-width: auto;
+            }
+
+            .visualization {
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.2em;
+            }
+
+            .phase-indicator {
+                max-width: 220px;
+            }
+
+            .phase-indicator .phase-description {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>How Communication Patterns Build Organizational Performance</h1>
+            <p>Watch how each interaction strengthens relationships and transforms the network</p>
+        </div>
+
+        <div class="content">
+            <div class="visualization">
+                <canvas id="networkCanvas"></canvas>
+
+                <div class="phase-indicator">
+                    <div class="phase-number" id="phaseNumber">Phase 1 of 4</div>
+                    <div class="phase-title" id="phaseTitle">Siloed Organization</div>
+                    <div class="phase-description" id="phaseDescription">Isolated teams with weak connections. Communication is infrequent and stays within departments.</div>
+                </div>
+
+                <div class="legend" id="orgLegend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4C32CC"></div>
+                        <span>People</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: rgba(107, 70, 193, 0.3)"></div>
+                        <span>Weak tie</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: rgba(76, 175, 80, 0.8)"></div>
+                        <span>Strong tie</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF9800"></div>
+                        <span>Communication</span>
+                    </div>
+                </div>
+                <div class="legend" id="egoLegend" style="display: none;">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4C32CC"></div>
+                        <span>You</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3B82F6"></div>
+                        <span>Manager</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #8B5CF6"></div>
+                        <span>Peers</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #10B981"></div>
+                        <span>Cross-functional</span>
+                    </div>
+                </div>
+
+                <div class="comm-indicator">
+                    <div class="pulse-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                        </svg>
+                    </div>
+                    <div class="comm-text">
+                        <strong id="commRate">Low</strong>
+                        Communication frequency
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="org-size-control">
+                    <label>Organization Size</label>
+                    <div class="org-size-input-row">
+                        <input type="range" class="org-size-slider" id="orgSizeSlider" min="20" max="1000" value="40">
+                        <input type="text" class="org-size-value" id="orgSizeValue" value="40 people">
+                    </div>
+                </div>
+
+                <div class="phases-container">
+                    <div class="phases-header">Transformation Phases</div>
+
+                    <div class="phase-card active" data-phase="1">
+                        <div class="card-header">
+                            <div class="phase-num">1</div>
+                            <div class="card-title">Siloed Organization</div>
+                        </div>
+                        <div class="card-insight">Rare communication. Weak, fragmented relationships.</div>
+                    </div>
+
+                    <div class="phase-card" data-phase="2">
+                        <div class="card-header">
+                            <div class="phase-num">2</div>
+                            <div class="card-title">Building Connections</div>
+                        </div>
+                        <div class="card-insight">Regular feedback loops. Relationships start forming.</div>
+                    </div>
+
+                    <div class="phase-card" data-phase="3">
+                        <div class="card-header">
+                            <div class="phase-num">3</div>
+                            <div class="card-title">High-Performance Network</div>
+                        </div>
+                        <div class="card-insight">Dense trust network enables rapid coordination.</div>
+                    </div>
+
+                    <div class="phase-card" data-phase="4">
+                        <div class="card-header">
+                            <div class="phase-num">4</div>
+                            <div class="card-title">Individual View</div>
+                        </div>
+                        <div class="card-insight">Zoom in: healthy patterns for one person.</div>
+                    </div>
+                </div>
+
+                <div class="play-container">
+                    <button class="play-button" id="playButton" onclick="playTransformation()">
+                        <span id="playIcon">&#9658;</span>
+                        <span id="playText">Watch Transformation</span>
+                    </button>
+                </div>
+
+                <div class="metrics-panel">
+                    <div class="metrics-header">Organizational Health</div>
+
+                    <div class="metric-item">
+                        <span class="metric-label">Relationship Strength</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="strengthBar" style="width: 15%"></div>
+                        </div>
+                        <span class="metric-value" id="strengthValue">15%</span>
+                    </div>
+
+                    <div class="metric-item">
+                        <span class="metric-label">Cross-Team Trust</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="trustBar" style="width: 10%"></div>
+                        </div>
+                        <span class="metric-value" id="trustValue">10%</span>
+                    </div>
+
+                    <div class="metric-item">
+                        <span class="metric-label">Information Flow</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="flowBar" style="width: 20%"></div>
+                        </div>
+                        <span class="metric-value" id="flowValue">20%</span>
+                    </div>
+
+                    <div class="metric-item">
+                        <span class="metric-label">Team Performance</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" id="perfBar" style="width: 25%"></div>
+                        </div>
+                        <span class="metric-value" id="perfValue">25%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="logo-container">
+            <img src="logo_happily_dark.png" alt="Happily" class="main-logo" />
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            ctx.scale(dpr, dpr);
+            canvas.displayWidth = rect.width;
+            canvas.displayHeight = rect.height;
+        }
+
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimeout);
+            window.resizeTimeout = setTimeout(() => {
+                resizeCanvas();
+                initializeNetwork();
+            }, 250);
+        });
+
+        // ==================== STATE ====================
+        const State = {
+            currentPhase: 1,
+            orgSize: 40,
+            isPlaying: false,
+            time: 0,
+            isEgoView: false
+        };
+
+        // Ego network data (for Phase 5 individual view)
+        let egoNodes = [];
+        let egoConnections = [];
+        let egoPulses = [];
+
+        // Phase configs - focused on communication frequency and its impact
+        const PhaseConfig = {
+            1: {
+                name: "Siloed Organization",
+                description: "Isolated teams with weak connections. Communication is infrequent and stays within departments.",
+                commRate: "Low",
+                pulseFrequency: 0.008,      // How often pulses spawn
+                pulseSpeed: 0.012,          // How fast pulses travel
+                crossTeamChance: 0.05,      // Chance of cross-team communication
+                relationshipGrowth: 0.001,  // How much each pulse strengthens relationship
+                relationshipDecay: 0.0008,  // How fast unused relationships weaken
+                clusterSpread: 1.0,
+                metrics: { strength: 15, trust: 10, flow: 20, perf: 25 }
+            },
+            2: {
+                name: "Building Connections",
+                description: "Initial cross-team touchpoints forming. Tentative relationships emerge as people start reaching out.",
+                commRate: "Moderate",
+                pulseFrequency: 0.025,
+                pulseSpeed: 0.018,
+                crossTeamChance: 0.2,
+                relationshipGrowth: 0.003,
+                relationshipDecay: 0.0005,
+                clusterSpread: 0.85,
+                metrics: { strength: 40, trust: 35, flow: 45, perf: 48 }
+            },
+            3: {
+                name: "High-Performance Network",
+                description: "Dense trust network enables rapid coordination. Information flows freely in all directions.",
+                commRate: "Very High",
+                pulseFrequency: 0.08,
+                pulseSpeed: 0.032,
+                crossTeamChance: 0.7,
+                relationshipGrowth: 0.008,
+                relationshipDecay: 0.0001,
+                clusterSpread: 0.55,
+                metrics: { strength: 92, trust: 90, flow: 95, perf: 94 }
+            },
+            4: {
+                name: "Individual View",
+                description: "Zoomed in: A single employee's healthy communication pattern with manager, peers, and cross-functional partners.",
+                commRate: "Balanced",
+                pulseFrequency: 0.06,
+                pulseSpeed: 0.02,
+                crossTeamChance: 0.5,
+                relationshipGrowth: 0.005,
+                relationshipDecay: 0.0001,
+                clusterSpread: 1.0,
+                isEgoView: true,
+                metrics: { strength: 95, trust: 92, flow: 90, perf: 96 }
+            }
+        };
+
+        // ==================== CLASSES ====================
+        class Node {
+            constructor(x, y, department, id, scale = 1.0) {
+                this.id = id;
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.baseX = x;
+                this.baseY = y;
+                this.deptCenterX = x;
+                this.deptCenterY = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.department = department;
+                this.radius = (5 + Math.random() * 3) * scale;
+
+                this.floatPhaseX = Math.random() * Math.PI * 2;
+                this.floatPhaseY = Math.random() * Math.PI * 2;
+                this.floatSpeed = 0.005 + Math.random() * 0.008;
+                this.floatAmplitude = (3 + Math.random() * 5) * scale;
+            }
+
+            update(time) {
+                const floatX = Math.sin(time * this.floatSpeed + this.floatPhaseX) * this.floatAmplitude;
+                const floatY = Math.cos(time * this.floatSpeed * 0.8 + this.floatPhaseY) * this.floatAmplitude;
+
+                this.vx = this.vx * 0.9 + ((this.targetX + floatX) - this.x) * 0.05;
+                this.vy = this.vy * 0.9 + ((this.targetY + floatY) - this.y) * 0.05;
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw(time) {
+                const pulse = Math.sin(time * 0.02) * 0.1 + 1;
+                const r = this.radius * pulse;
+
+                // Glow
+                const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 3);
+                glow.addColorStop(0, 'rgba(76, 50, 204, 0.15)');
+                glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Node
+                const grad = ctx.createRadialGradient(this.x - r*0.3, this.y - r*0.3, 0, this.x, this.y, r);
+                grad.addColorStop(0, '#8B5CF6');
+                grad.addColorStop(1, '#4C32CC');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Connection {
+            constructor(node1, node2, isCrossTeam, distance, lineScale = 1.0, minPhase = 1, startStrength = null) {
+                this.node1 = node1;
+                this.node2 = node2;
+                this.isCrossTeam = isCrossTeam;
+                this.distance = distance;
+                this.lineScale = lineScale;
+                this.minPhase = minPhase;
+
+                // Use provided startStrength or default based on type
+                this.baseStrength = startStrength !== null ? startStrength : (isCrossTeam ? 0.1 : 0.2);
+                this.strength = this.baseStrength + Math.random() * 0.1;
+                this.targetStrength = this.strength;
+                this.glowIntensity = 0;
+            }
+
+            isActiveInPhase(phase) {
+                return phase >= this.minPhase;
+            }
+
+            receivePulse(growth) {
+                this.targetStrength = Math.min(1, this.targetStrength + growth);
+                this.glowIntensity = 1;
+            }
+
+            update(decay) {
+                // Decay but never below base strength
+                this.targetStrength = Math.max(this.baseStrength, this.targetStrength - decay);
+                this.strength += (this.targetStrength - this.strength) * 0.03;
+                this.glowIntensity *= 0.9;
+            }
+
+            draw() {
+                const baseColor = this.isCrossTeam ? [76, 175, 80] : [107, 70, 193];
+
+                // Scale opacity and width based on strength
+                // Weak ties: thin and faint, Strong ties: thick and solid
+                const opacity = 0.1 + this.strength * 0.6;
+                const width = (0.5 + this.strength * 4) * this.lineScale;
+
+                // Glow effect when pulse arrives
+                if (this.glowIntensity > 0.05) {
+                    ctx.strokeStyle = `rgba(${baseColor.join(',')}, ${this.glowIntensity * 0.6})`;
+                    ctx.lineWidth = width + 8 * this.glowIntensity * this.lineScale;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(this.node1.x, this.node1.y);
+                    ctx.lineTo(this.node2.x, this.node2.y);
+                    ctx.stroke();
+                }
+
+                // Main line - always visible
+                ctx.strokeStyle = `rgba(${baseColor.join(',')}, ${opacity})`;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(this.node1.x, this.node1.y);
+                ctx.lineTo(this.node2.x, this.node2.y);
+                ctx.stroke();
+            }
+        }
+
+        class Pulse {
+            constructor(connection, speed, growth) {
+                this.connection = connection;
+                this.progress = 0;
+                this.speed = speed * (0.8 + Math.random() * 0.4);
+                this.growth = growth;
+                this.size = (3 + Math.random() * 2) * connection.lineScale;
+                this.trail = [];
+
+                // Direction
+                this.forward = Math.random() > 0.5;
+                this.startNode = this.forward ? connection.node1 : connection.node2;
+                this.endNode = this.forward ? connection.node2 : connection.node1;
+            }
+
+            getPosition(t) {
+                return {
+                    x: this.startNode.x + (this.endNode.x - this.startNode.x) * t,
+                    y: this.startNode.y + (this.endNode.y - this.startNode.y) * t
+                };
+            }
+
+            update() {
+                this.progress += this.speed;
+
+                const pos = this.getPosition(this.progress);
+                this.trail.push({ x: pos.x, y: pos.y });
+                if (this.trail.length > 8) this.trail.shift();
+
+                // Pulse completed - strengthen the relationship
+                if (this.progress >= 1) {
+                    this.connection.receivePulse(this.growth);
+                    return false;
+                }
+                return true;
+            }
+
+            draw() {
+                // Trail
+                this.trail.forEach((pt, i) => {
+                    const alpha = (i + 1) / this.trail.length * 0.4;
+                    const size = this.size * (0.3 + (i / this.trail.length) * 0.7);
+                    ctx.fillStyle = `rgba(255, 152, 0, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Main pulse
+                const pos = this.getPosition(this.progress);
+
+                // Outer glow
+                const glow = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.size * 3);
+                glow.addColorStop(0, 'rgba(255, 152, 0, 0.4)');
+                glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, this.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core
+                const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.size);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                grad.addColorStop(0.4, 'rgba(255, 200, 100, 0.9)');
+                grad.addColorStop(1, 'rgba(255, 152, 0, 0.5)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // ==================== EGO NETWORK (Phase 5) ====================
+        class EgoNode {
+            constructor(x, y, role, label) {
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.role = role; // 'self', 'manager', 'peer', 'cross-functional'
+                this.label = label;
+
+                // Size based on role
+                if (role === 'self') this.radius = 18;
+                else if (role === 'manager') this.radius = 14;
+                else this.radius = 10;
+
+                this.floatPhaseX = Math.random() * Math.PI * 2;
+                this.floatPhaseY = Math.random() * Math.PI * 2;
+                this.floatSpeed = 0.008 + Math.random() * 0.005;
+                this.floatAmplitude = 4 + Math.random() * 3;
+            }
+
+            update(time) {
+                const floatX = Math.sin(time * this.floatSpeed + this.floatPhaseX) * this.floatAmplitude;
+                const floatY = Math.cos(time * this.floatSpeed * 0.8 + this.floatPhaseY) * this.floatAmplitude;
+
+                this.vx = this.vx * 0.9 + ((this.targetX + floatX) - this.x) * 0.05;
+                this.vy = this.vy * 0.9 + ((this.targetY + floatY) - this.y) * 0.05;
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw(time) {
+                const pulse = Math.sin(time * 0.02) * 0.08 + 1;
+                const r = this.radius * pulse;
+
+                // Glow - stronger for self
+                const glowAlpha = this.role === 'self' ? 0.25 : 0.15;
+                const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 3);
+                glow.addColorStop(0, `rgba(76, 50, 204, ${glowAlpha})`);
+                glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Node color based on role
+                let colors;
+                if (this.role === 'self') colors = ['#6B46C1', '#4C32CC'];
+                else if (this.role === 'manager') colors = ['#3B82F6', '#1D4ED8'];
+                else if (this.role === 'peer') colors = ['#8B5CF6', '#6D28D9'];
+                else colors = ['#10B981', '#059669']; // cross-functional
+
+                const grad = ctx.createRadialGradient(this.x - r*0.3, this.y - r*0.3, 0, this.x, this.y, r);
+                grad.addColorStop(0, colors[0]);
+                grad.addColorStop(1, colors[1]);
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#333';
+                ctx.font = `${this.role === 'self' ? '600 13px' : '500 11px'} -apple-system, BlinkMacSystemFont, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(this.label, this.x, this.y + r + 8);
+            }
+        }
+
+        class EgoConnection {
+            constructor(node1, node2, relationshipType) {
+                this.node1 = node1;
+                this.node2 = node2;
+                this.relationshipType = relationshipType; // 'manager', 'peer', 'cross-functional'
+                this.strength = 0.7 + Math.random() * 0.3; // Strong relationships in high-performing org
+                this.glowIntensity = 0;
+            }
+
+            receivePulse() {
+                this.glowIntensity = 1;
+            }
+
+            update() {
+                this.glowIntensity *= 0.92;
+            }
+
+            draw() {
+                let baseColor;
+                if (this.relationshipType === 'manager') baseColor = [59, 130, 246];
+                else if (this.relationshipType === 'peer') baseColor = [139, 92, 246];
+                else baseColor = [16, 185, 129];
+
+                const opacity = 0.3 + this.strength * 0.5;
+                const width = 2 + this.strength * 3;
+
+                // Glow
+                if (this.glowIntensity > 0.05) {
+                    ctx.strokeStyle = `rgba(${baseColor.join(',')}, ${this.glowIntensity * 0.5})`;
+                    ctx.lineWidth = width + 10 * this.glowIntensity;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(this.node1.x, this.node1.y);
+                    ctx.lineTo(this.node2.x, this.node2.y);
+                    ctx.stroke();
+                }
+
+                // Main line
+                ctx.strokeStyle = `rgba(${baseColor.join(',')}, ${opacity})`;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(this.node1.x, this.node1.y);
+                ctx.lineTo(this.node2.x, this.node2.y);
+                ctx.stroke();
+            }
+        }
+
+        function initializeEgoNetwork() {
+            egoNodes = [];
+            egoConnections = [];
+            egoPulses = [];
+
+            const centerX = canvas.displayWidth / 2;
+            const centerY = canvas.displayHeight / 2;
+
+            // Create the focal individual at center
+            const self = new EgoNode(centerX, centerY, 'self', 'You');
+            egoNodes.push(self);
+
+            // Manager above
+            const manager = new EgoNode(centerX, centerY - 120, 'manager', 'Manager');
+            egoNodes.push(manager);
+            egoConnections.push(new EgoConnection(self, manager, 'manager'));
+
+            // Skip-level manager (optional, further up)
+            const skipLevel = new EgoNode(centerX, centerY - 200, 'manager', 'Director');
+            egoNodes.push(skipLevel);
+            egoConnections.push(new EgoConnection(manager, skipLevel, 'manager'));
+
+            // Peers in a semicircle below and to sides
+            const peerLabels = ['Peer 1', 'Peer 2', 'Peer 3', 'Peer 4'];
+            const peerRadius = 110;
+            peerLabels.forEach((label, i) => {
+                const angle = Math.PI * 0.15 + (Math.PI * 0.7 / (peerLabels.length - 1)) * i;
+                const px = centerX + Math.cos(angle) * peerRadius;
+                const py = centerY + Math.sin(angle) * peerRadius * 0.8;
+                const peer = new EgoNode(px, py, 'peer', label);
+                egoNodes.push(peer);
+                egoConnections.push(new EgoConnection(self, peer, 'peer'));
+            });
+
+            // Cross-functional partners on the sides
+            const crossLabels = ['Marketing', 'Engineering', 'Sales'];
+            crossLabels.forEach((label, i) => {
+                const side = i % 2 === 0 ? -1 : 1;
+                const xOffset = 160 + (i === 2 ? 40 : 0);
+                const yOffset = (i - 1) * 60;
+                const cf = new EgoNode(centerX + side * xOffset, centerY + yOffset, 'cross-functional', label);
+                egoNodes.push(cf);
+                egoConnections.push(new EgoConnection(self, cf, 'cross-functional'));
+            });
+        }
+
+        // ==================== NETWORK ====================
+        let nodes = [];
+        let connections = [];
+        let pulses = [];
+
+        function initializeNetwork() {
+            nodes = [];
+            connections = [];
+            pulses = [];
+
+            const centerX = canvas.displayWidth / 2;
+            const centerY = canvas.displayHeight / 2;
+
+            // Dynamic team count based on org size
+            // Small orgs: 4-5 teams, Large orgs: up to 20 teams
+            const numTeams = Math.min(20, Math.max(4, Math.floor(State.orgSize / 50) + 4));
+
+            // Generate varied team sizes (some teams 0.5x to 1.8x average size)
+            const teamSizeVariance = [];
+            let totalVariance = 0;
+            for (let i = 0; i < numTeams; i++) {
+                const variance = 0.5 + Math.random() * 1.3; // 0.5 to 1.8
+                teamSizeVariance.push(variance);
+                totalVariance += variance;
+            }
+
+            // Normalize to match total org size
+            const teamSizes = teamSizeVariance.map(v =>
+                Math.max(2, Math.round((v / totalVariance) * State.orgSize))
+            );
+
+            // Adjust to match exact org size
+            let currentTotal = teamSizes.reduce((a, b) => a + b, 0);
+            while (currentTotal !== State.orgSize) {
+                const idx = Math.floor(Math.random() * numTeams);
+                if (currentTotal < State.orgSize && teamSizes[idx] < State.orgSize * 0.3) {
+                    teamSizes[idx]++;
+                    currentTotal++;
+                } else if (currentTotal > State.orgSize && teamSizes[idx] > 2) {
+                    teamSizes[idx]--;
+                    currentTotal--;
+                }
+            }
+
+            const departments = [];
+            for (let i = 0; i < numTeams; i++) {
+                departments.push({
+                    name: String.fromCharCode(65 + i),
+                    size: teamSizes[i],
+                    // Vary cluster tightness (some teams more spread out)
+                    tightness: 0.6 + Math.random() * 0.6,
+                    // Vary radial position slightly
+                    radiusOffset: (Math.random() - 0.5) * 0.25
+                });
+            }
+
+            // Scale layout based on org size
+            const baseRadius = Math.min(centerX, centerY) * (State.orgSize > 200 ? 0.65 : 0.55);
+            const avgClusterRadius = Math.min(60, Math.max(25, 80 - numTeams * 2.5));
+
+            // Scale node size for larger orgs
+            const nodeScale = State.orgSize > 500 ? 0.5 : State.orgSize > 200 ? 0.7 : 1.0;
+
+            let nodeId = 0;
+
+            departments.forEach((dept, di) => {
+                // Vary angular position slightly for organic feel
+                const angleOffset = (Math.random() - 0.5) * 0.3;
+                const angle = (Math.PI * 2 / departments.length) * di - Math.PI / 2 + angleOffset;
+
+                // Vary radial distance
+                const radiusMult = 1 + dept.radiusOffset;
+                const deptX = centerX + Math.cos(angle) * baseRadius * radiusMult;
+                const deptY = centerY + Math.sin(angle) * baseRadius * radiusMult;
+
+                // Cluster radius scales with team size
+                const sizeRatio = dept.size / (State.orgSize / numTeams);
+                const clusterRadius = avgClusterRadius * Math.sqrt(sizeRatio) * dept.tightness;
+
+                for (let i = 0; i < dept.size; i++) {
+                    const memberAngle = (Math.PI * 2 / dept.size) * i + (Math.random() - 0.5) * 0.8;
+                    const memberRadius = clusterRadius * 0.3 + Math.random() * clusterRadius * 0.7;
+                    const mx = deptX + Math.cos(memberAngle) * memberRadius + (Math.random() - 0.5) * 20;
+                    const my = deptY + Math.sin(memberAngle) * memberRadius + (Math.random() - 0.5) * 20;
+
+                    const node = new Node(mx, my, dept.name, nodeId++, nodeScale);
+                    node.baseX = mx;
+                    node.baseY = my;
+                    node.deptCenterX = deptX;
+                    node.deptCenterY = deptY;
+                    nodes.push(node);
+                }
+            });
+
+            // Scale connection thresholds based on org size
+            const internalThreshold = State.orgSize > 300 ? 80 : 120;
+
+            // Calculate distance between adjacent cluster centers
+            // For circular layout: 2 * baseRadius * sin(π / numTeams)
+            const adjacentClusterDist = 2 * baseRadius * Math.sin(Math.PI / numTeams);
+            // Cross-team threshold: just enough to reach adjacent clusters
+            // Reduced multiplier to avoid over-connecting
+            const crossTeamThreshold = adjacentClusterDist * 0.9 + avgClusterRadius;
+
+            const lineScale = State.orgSize > 500 ? 0.4 : State.orgSize > 200 ? 0.6 : 1.0;
+
+            // Create internal (within-team) connections based on proximity
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    if (nodes[i].department === nodes[j].department) {
+                        const dx = nodes[i].baseX - nodes[j].baseX;
+                        const dy = nodes[i].baseY - nodes[j].baseY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < internalThreshold) {
+                            connections.push(new Connection(nodes[i], nodes[j], false, dist, lineScale, 1, 0.4));
+                        }
+                    }
+                }
+            }
+
+            // Create cross-team connections RANDOMLY (not distance-based)
+            // This models real org networks where relationships span across the whole org
+            const allCrossTeamPairs = [];
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    if (nodes[i].department !== nodes[j].department) {
+                        allCrossTeamPairs.push({ i, j });
+                    }
+                }
+            }
+
+            // Shuffle and select a realistic number of cross-team connections
+            // Average ~1.5 cross-team connections per person
+            const targetCrossTeamCount = Math.floor(State.orgSize * 1.5);
+            const shuffled = allCrossTeamPairs.sort(() => Math.random() - 0.5);
+            const selectedPairs = shuffled.slice(0, Math.min(targetCrossTeamCount, shuffled.length));
+
+            // Distribute across phases with distinct visual qualities
+            // Phase 2: Tentative connections (weak, thin - just starting to form)
+            // Phase 3: Full high-performance network with strong ties
+            selectedPairs.forEach(({ i, j }, idx) => {
+                const percentile = idx / selectedPairs.length;
+                let minPhase, startStrength;
+
+                if (percentile < 0.25) {
+                    minPhase = 2;
+                    startStrength = 0.3; // Weak/tentative - visibly forming but not strong yet
+                } else {
+                    minPhase = 3;
+                    startStrength = 0.7; // Strong ties in high-performance network
+                }
+
+                const dx = nodes[i].baseX - nodes[j].baseX;
+                const dy = nodes[i].baseY - nodes[j].baseY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                connections.push(new Connection(nodes[i], nodes[j], true, dist, lineScale, minPhase, startStrength));
+            });
+
+            // Store Phase 2 connections so they can be strengthened in Phase 3
+            connections.forEach(c => {
+                if (c.isCrossTeam && c.minPhase === 2) {
+                    c.phase2Connection = true;
+                }
+            });
+
+            applyPhase(State.currentPhase, false);
+        }
+
+        function applyPhase(phase, animate = true) {
+            const config = PhaseConfig[phase];
+            const centerX = canvas.displayWidth / 2;
+            const centerY = canvas.displayHeight / 2;
+
+            // Check if switching to/from ego view
+            State.isEgoView = config.isEgoView || false;
+            if (State.isEgoView) {
+                initializeEgoNetwork();
+            }
+
+            // Clear pulses when changing phases (prevents orphan pulses)
+            pulses = [];
+            egoPulses = [];
+
+            // Handle cross-team connection strength based on phase
+            connections.forEach(c => {
+                if (c.isCrossTeam) {
+                    if (c.minPhase === phase) {
+                        // New connections appearing this phase - start at their base strength
+                        c.strength = c.baseStrength;
+                        c.targetStrength = c.baseStrength;
+                    } else if (c.phase2Connection && phase === 3) {
+                        // Phase 2 connections get STRONGER in Phase 3 (high-performance)
+                        c.targetStrength = Math.min(1, c.strength + 0.4);
+                    }
+                }
+            });
+
+            // Update node positions
+            nodes.forEach(node => {
+                const dx = node.deptCenterX - centerX;
+                const dy = node.deptCenterY - centerY;
+                const nodeOffsetX = node.baseX - node.deptCenterX;
+                const nodeOffsetY = node.baseY - node.deptCenterY;
+
+                node.targetX = centerX + dx * config.clusterSpread + nodeOffsetX;
+                node.targetY = centerY + dy * config.clusterSpread + nodeOffsetY;
+
+                if (!animate) {
+                    node.x = node.targetX;
+                    node.y = node.targetY;
+                }
+            });
+
+            updateUI(phase, config);
+            updateMetrics(config.metrics, animate);
+        }
+
+        function updateUI(phase, config) {
+            document.getElementById('phaseNumber').textContent = `Phase ${phase} of 4`;
+            document.getElementById('phaseTitle').textContent = config.name;
+            document.getElementById('phaseDescription').textContent = config.description;
+            document.getElementById('commRate').textContent = config.commRate;
+
+            document.querySelectorAll('.phase-card').forEach(card => {
+                card.classList.toggle('active', parseInt(card.dataset.phase) === phase);
+            });
+
+            // Toggle legends based on view
+            const isEgo = config.isEgoView || false;
+            document.getElementById('orgLegend').style.display = isEgo ? 'none' : 'block';
+            document.getElementById('egoLegend').style.display = isEgo ? 'block' : 'none';
+        }
+
+        function updateMetrics(metrics, animate) {
+            ['strength', 'trust', 'flow', 'perf'].forEach((key, i) => {
+                const bar = document.getElementById(`${key}Bar`);
+                const val = document.getElementById(`${key}Value`);
+                if (bar && val) {
+                    const target = metrics[key];
+                    if (animate) {
+                        setTimeout(() => {
+                            bar.style.width = `${target}%`;
+                            animateValue(val, target);
+                        }, i * 60);
+                    } else {
+                        bar.style.width = `${target}%`;
+                        val.textContent = `${target}%`;
+                    }
+                }
+            });
+        }
+
+        function animateValue(el, end) {
+            const start = parseInt(el.textContent) || 0;
+            const duration = 600;
+            const startTime = Date.now();
+
+            function tick() {
+                const t = Math.min((Date.now() - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - t, 3);
+                el.textContent = `${Math.round(start + (end - start) * eased)}%`;
+                if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // ==================== INTERACTIONS ====================
+        const orgSizeSlider = document.getElementById('orgSizeSlider');
+        const orgSizeValue = document.getElementById('orgSizeValue');
+
+        orgSizeSlider.addEventListener('input', e => {
+            State.orgSize = parseInt(e.target.value);
+            orgSizeValue.value = `${State.orgSize} people`;
+        });
+
+        orgSizeSlider.addEventListener('change', () => initializeNetwork());
+
+        orgSizeValue.addEventListener('change', e => {
+            const val = parseInt(e.target.value);
+            if (val >= 20 && val <= 1000) {
+                State.orgSize = val;
+                orgSizeSlider.value = val;
+                orgSizeValue.value = `${val} people`;
+                initializeNetwork();
+            } else {
+                orgSizeValue.value = `${State.orgSize} people`;
+            }
+        });
+
+        document.querySelectorAll('.phase-card').forEach(card => {
+            card.addEventListener('click', () => {
+                if (State.isPlaying) return;
+                State.currentPhase = parseInt(card.dataset.phase);
+                applyPhase(State.currentPhase, true);
+            });
+        });
+
+        function playTransformation() {
+            if (State.isPlaying) return;
+            State.isPlaying = true;
+
+            const btn = document.getElementById('playButton');
+            const icon = document.getElementById('playIcon');
+            const text = document.getElementById('playText');
+
+            btn.disabled = true;
+            icon.innerHTML = '&#10074;&#10074;';
+            text.textContent = 'Transforming...';
+
+            State.currentPhase = 1;
+            applyPhase(1, false);
+
+            let phase = 1;
+            const interval = setInterval(() => {
+                phase++;
+                if (phase <= 4) {
+                    State.currentPhase = phase;
+                    applyPhase(phase, true);
+                } else {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        State.isPlaying = false;
+                        btn.disabled = false;
+                        icon.innerHTML = '&#9658;';
+                        text.textContent = 'Watch Transformation';
+                    }, 1000);
+                }
+            }, 5000);
+        }
+
+        // ==================== ANIMATION ====================
+        function animate() {
+            const dpr = window.devicePixelRatio || 1;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+
+            // Background
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(0, 0, canvas.displayWidth, canvas.displayHeight);
+
+            const config = PhaseConfig[State.currentPhase];
+
+            if (State.isEgoView) {
+                // ===== EGO NETWORK VIEW (Phase 5) =====
+
+                // Spawn ego pulses
+                if (Math.random() < config.pulseFrequency && egoConnections.length > 0) {
+                    const conn = egoConnections[Math.floor(Math.random() * egoConnections.length)];
+                    egoPulses.push({
+                        connection: conn,
+                        progress: 0,
+                        speed: config.pulseSpeed * (0.8 + Math.random() * 0.4),
+                        forward: Math.random() > 0.5,
+                        size: 4 + Math.random() * 2,
+                        trail: []
+                    });
+                }
+
+                // Update and draw ego connections
+                egoConnections.forEach(c => {
+                    c.update();
+                    c.draw();
+                });
+
+                // Update and draw ego pulses
+                egoPulses = egoPulses.filter(p => {
+                    p.progress += p.speed;
+
+                    const startNode = p.forward ? p.connection.node1 : p.connection.node2;
+                    const endNode = p.forward ? p.connection.node2 : p.connection.node1;
+                    const x = startNode.x + (endNode.x - startNode.x) * p.progress;
+                    const y = startNode.y + (endNode.y - startNode.y) * p.progress;
+
+                    p.trail.push({ x, y });
+                    if (p.trail.length > 8) p.trail.shift();
+
+                    // Draw trail
+                    p.trail.forEach((pt, i) => {
+                        const alpha = (i + 1) / p.trail.length * 0.4;
+                        const size = p.size * (0.3 + (i / p.trail.length) * 0.7);
+                        ctx.fillStyle = `rgba(255, 152, 0, ${alpha})`;
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    // Draw main pulse
+                    const glow = ctx.createRadialGradient(x, y, 0, x, y, p.size * 3);
+                    glow.addColorStop(0, 'rgba(255, 152, 0, 0.4)');
+                    glow.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(x, y, p.size * 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size);
+                    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                    grad.addColorStop(0.4, 'rgba(255, 200, 100, 0.9)');
+                    grad.addColorStop(1, 'rgba(255, 152, 0, 0.5)');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(x, y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.progress >= 1) {
+                        p.connection.receivePulse();
+                        return false;
+                    }
+                    return true;
+                });
+
+                // Update and draw ego nodes
+                egoNodes.forEach(n => {
+                    n.update(State.time);
+                    n.draw(State.time);
+                });
+
+            } else {
+                // ===== ORGANIZATION NETWORK VIEW (Phases 1-4) =====
+
+                // Get connections active in current phase
+                const activeConnections = connections.filter(c => c.isActiveInPhase(State.currentPhase));
+
+                // Spawn new pulses based on communication frequency
+                if (Math.random() < config.pulseFrequency) {
+                    // Pick a random active connection
+                    const eligibleConns = activeConnections.filter(c => {
+                        if (c.isCrossTeam) return Math.random() < config.crossTeamChance;
+                        return true;
+                    });
+
+                    if (eligibleConns.length > 0) {
+                        const conn = eligibleConns[Math.floor(Math.random() * eligibleConns.length)];
+                        pulses.push(new Pulse(conn, config.pulseSpeed, config.relationshipGrowth));
+                    }
+                }
+
+                // Update and draw only active connections
+                activeConnections.forEach(c => {
+                    c.update(config.relationshipDecay);
+                    c.draw();
+                });
+
+                // Update and draw pulses
+                pulses = pulses.filter(p => {
+                    const alive = p.update();
+                    if (alive) p.draw();
+                    return alive;
+                });
+
+                // Update and draw nodes
+                nodes.forEach(n => {
+                    n.update(State.time);
+                    n.draw(State.time);
+                });
+            }
+
+            State.time++;
+            requestAnimationFrame(animate);
+        }
+
+        // ==================== INIT ====================
+        setTimeout(() => {
+            resizeCanvas();
+            initializeNetwork();
+            animate();
+        }, 100);
+    </script>
+</body>
+</html>
