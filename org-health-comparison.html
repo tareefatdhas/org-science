@@ -496,21 +496,29 @@
                     </div>
                     <div class="legend-item">
                         <div class="legend-line" style="background: rgba(107, 70, 193, 0.3)"></div>
-                        <span>Weak tie</span>
+                        <span>Weak tie (<span id="weakTiePercent">0</span>%)</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-line" style="background: rgba(76, 175, 80, 0.8)"></div>
-                        <span>Strong tie</span>
+                        <span>Strong tie (<span id="strongTiePercent">0</span>%)</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background: #FF9800"></div>
                         <span>Communication</span>
                     </div>
+                    <div class="legend-item" id="legendBridge" style="display: none;">
+                        <div class="legend-color" style="background: #4C32CC; border: 2px solid #14B8A6; box-sizing: border-box;"></div>
+                        <span>Bridge (<span id="bridgeCount">0</span>)</span>
+                    </div>
+                    <div class="legend-item" id="legendInfluencer" style="display: none;">
+                        <div class="legend-color" style="background: #4C32CC; box-shadow: 0 0 8px 3px rgba(251, 191, 36, 0.6);"></div>
+                        <span>Influencer (<span id="influencerCount">0</span>)</span>
+                    </div>
                 </div>
                 <div class="legend" id="egoLegend" style="display: none;">
                     <div class="legend-item">
-                        <div class="legend-color" style="background: #4C32CC"></div>
-                        <span>You</span>
+                        <div class="legend-color" style="background: #4C32CC; border: 2px solid #14B8A6; box-sizing: border-box;"></div>
+                        <span>You (Bridge)</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background: #3B82F6"></div>
@@ -685,7 +693,7 @@
             },
             4: {
                 name: "Employee Experience",
-                description: "What it feels like: regular touchpoints with manager, peers, and cross-functional partners.",
+                description: "A bridge in action: regular touchpoints with manager, peers, and cross-functional partners.",
                 commRate: "Balanced",
                 pulseFrequency: 0.06,
                 pulseSpeed: 0.02,
@@ -712,12 +720,21 @@
                 this.vx = 0;
                 this.vy = 0;
                 this.department = department;
-                this.radius = (5 + Math.random() * 3) * scale;
+                this.baseRadius = (5 + Math.random() * 3) * scale;
+                this.radius = this.baseRadius;
+                this.scale = scale;
 
                 this.floatPhaseX = Math.random() * Math.PI * 2;
                 this.floatPhaseY = Math.random() * Math.PI * 2;
                 this.floatSpeed = 0.005 + Math.random() * 0.008;
                 this.floatAmplitude = (3 + Math.random() * 5) * scale;
+
+                // Network role properties
+                this.totalConnections = 0;
+                this.crossTeamConnections = 0;
+                this.isBridge = false;
+                this.isInfluencer = false;
+                this.isIsolated = false;
             }
 
             update(time) {
@@ -730,11 +747,50 @@
                 this.y += this.vy;
             }
 
-            draw(time) {
+            draw(time, phase = 1) {
                 const pulse = Math.sin(time * 0.02) * 0.1 + 1;
-                const r = this.radius * pulse;
 
-                // Glow
+                // Influencers are slightly larger
+                const sizeBoost = (this.isInfluencer && phase >= 2) ? 1.4 : 1;
+                const r = this.baseRadius * pulse * sizeBoost;
+
+                // Isolated nodes in Phase 1 - dimmed with red tint
+                if (this.isIsolated && phase === 1) {
+                    // Dim red glow for isolated
+                    const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 2.5);
+                    glow.addColorStop(0, 'rgba(239, 68, 68, 0.12)');
+                    glow.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, r * 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Dimmed node
+                    const grad = ctx.createRadialGradient(this.x - r*0.3, this.y - r*0.3, 0, this.x, this.y, r);
+                    grad.addColorStop(0, '#9CA3AF');
+                    grad.addColorStop(1, '#6B7280');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    return;
+                }
+
+                // Influencer glow (golden) - Phase 2+ with subtle pulse
+                if (this.isInfluencer && phase >= 2) {
+                    const influencerPulse = Math.sin(time * 0.03 + this.id) * 0.15 + 1; // Slow, offset by id
+                    const glowSize = r * 4 * influencerPulse;
+                    const influencerGlow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+                    influencerGlow.addColorStop(0, 'rgba(251, 191, 36, 0.35)');
+                    influencerGlow.addColorStop(0.5, 'rgba(251, 191, 36, 0.15)');
+                    influencerGlow.addColorStop(1, 'transparent');
+                    ctx.fillStyle = influencerGlow;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Standard glow
                 const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 3);
                 glow.addColorStop(0, 'rgba(76, 50, 204, 0.15)');
                 glow.addColorStop(1, 'transparent');
@@ -742,6 +798,18 @@
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, r * 3, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Bridge ring (teal) - Phase 2+ with subtle pulse
+                if (this.isBridge && phase >= 2) {
+                    const bridgePulse = Math.sin(time * 0.025 + this.id * 0.5) * 0.2 + 1; // Slow pulse
+                    const ringRadius = (r + 4 * this.scale) * bridgePulse;
+                    const ringAlpha = 0.6 + Math.sin(time * 0.025 + this.id * 0.5) * 0.2;
+                    ctx.strokeStyle = `rgba(20, 184, 166, ${ringAlpha})`;
+                    ctx.lineWidth = 2.5 * this.scale;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
 
                 // Node
                 const grad = ctx.createRadialGradient(this.x - r*0.3, this.y - r*0.3, 0, this.x, this.y, r);
@@ -1059,6 +1127,18 @@
                 ctx.arc(this.x, this.y, r * 3, 0, Math.PI * 2);
                 ctx.fill();
 
+                // Bridge ring for "self" node - they're a bridge with cross-functional connections
+                if (this.role === 'self') {
+                    const bridgePulse = Math.sin(time * 0.025) * 0.15 + 1;
+                    const ringRadius = (r + 5) * bridgePulse;
+                    const ringAlpha = 0.7 + Math.sin(time * 0.025) * 0.2;
+                    ctx.strokeStyle = `rgba(20, 184, 166, ${ringAlpha})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
                 // Node color based on role
                 let colors;
                 if (this.role === 'self') colors = ['#6B46C1', '#4C32CC'];
@@ -1233,8 +1313,9 @@
                 });
             }
 
-            // Scale layout based on org size
-            const baseRadius = Math.min(centerX, centerY) * (State.orgSize > 200 ? 0.65 : 0.55);
+            // Scale layout based on org size - larger orgs need more spread
+            const sizeMultiplier = State.orgSize > 400 ? 0.75 : State.orgSize > 200 ? 0.68 : 0.55;
+            const baseRadius = Math.min(centerX, centerY) * sizeMultiplier;
             const avgClusterRadius = Math.min(60, Math.max(25, 80 - numTeams * 2.5));
 
             // Scale node size for larger orgs
@@ -1291,7 +1372,8 @@
                         const dy = nodes[i].baseY - nodes[j].baseY;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist < internalThreshold) {
-                            connections.push(new Connection(nodes[i], nodes[j], false, dist, lineScale, 1, 0.4));
+                            // In silos, even internal communication is weak
+                            connections.push(new Connection(nodes[i], nodes[j], false, dist, lineScale, 1, 0.3));
                         }
                     }
                 }
@@ -1323,10 +1405,12 @@
 
                 if (percentile < 0.25) {
                     minPhase = 2;
-                    startStrength = 0.3; // Weak/tentative - visibly forming but not strong yet
+                    // Phase 2: New cross-team ties are forming but still weak
+                    startStrength = 0.25 + Math.random() * 0.15; // 0.25-0.4 range (weak)
                 } else {
                     minPhase = 3;
-                    startStrength = 0.7; // Strong ties in high-performance network
+                    // Phase 3: Sustained habits create strong ties
+                    startStrength = 0.6 + Math.random() * 0.2; // 0.6-0.8 range (strong)
                 }
 
                 const dx = nodes[i].baseX - nodes[j].baseX;
@@ -1343,7 +1427,71 @@
                 }
             });
 
+            // Calculate node roles based on connections (will be recalculated per phase)
+            calculateNodeRoles(State.currentPhase);
+
             applyPhase(State.currentPhase, false);
+        }
+
+        function calculateNodeRoles(phase) {
+            // Reset all role data
+            nodes.forEach(node => {
+                node.totalConnections = 0;
+                node.crossTeamConnections = 0;
+                node.connectedDepartments = new Set();
+                node.connectedDepartments.add(node.department); // Own department
+                node.isBridge = false;
+                node.isInfluencer = false;
+                node.isIsolated = false;
+            });
+
+            // Only count connections that are ACTIVE in the current phase
+            const activeConnections = connections.filter(c => c.isActiveInPhase(phase));
+
+            // Count connections and track which departments each node connects to
+            activeConnections.forEach(conn => {
+                conn.node1.totalConnections++;
+                conn.node2.totalConnections++;
+                if (conn.isCrossTeam) {
+                    conn.node1.crossTeamConnections++;
+                    conn.node2.crossTeamConnections++;
+                    // Track unique departments connected
+                    conn.node1.connectedDepartments.add(conn.node2.department);
+                    conn.node2.connectedDepartments.add(conn.node1.department);
+                }
+            });
+
+            // Identify bridges: connects 4+ DIFFERENT departments AND is in top tier of cross-team connectors
+            // True bridges are rare - they span structural holes between multiple clusters
+            const nodesWithCrossTeam = nodes.filter(n => n.crossTeamConnections > 0);
+            const sortedByCrossTeam = [...nodesWithCrossTeam].sort((a, b) => b.crossTeamConnections - a.crossTeamConnections);
+            const bridgeThreshold = Math.max(1, Math.floor(nodesWithCrossTeam.length * 0.05)); // Top 5% of cross-team connectors
+
+            sortedByCrossTeam.slice(0, bridgeThreshold).forEach(node => {
+                // Must connect to 4+ different departments to be a true bridge
+                if (node.connectedDepartments.size >= 4) {
+                    node.isBridge = true;
+                }
+            });
+
+            // Identify influencers: top 5% by total connections AND significantly above average
+            const avgConnections = nodes.reduce((sum, n) => sum + n.totalConnections, 0) / nodes.length;
+            const sortedByConnections = [...nodes].sort((a, b) => b.totalConnections - a.totalConnections);
+            const influencerThreshold = Math.max(1, Math.floor(nodes.length * 0.05)); // Top 5%
+
+            sortedByConnections.slice(0, influencerThreshold).forEach(node => {
+                // Must have significantly more connections than average (1.5x)
+                if (node.totalConnections >= avgConnections * 1.5) {
+                    node.isInfluencer = true;
+                }
+            });
+
+            // Identify isolated nodes (0-1 connections) - at risk
+            nodes.forEach(node => {
+                if (node.totalConnections <= 1) {
+                    node.isIsolated = true;
+                }
+            });
         }
 
         function applyPhase(phase, animate = true) {
@@ -1356,6 +1504,9 @@
             if (State.isEgoView) {
                 initializeEgoNetwork();
             }
+
+            // Recalculate node roles based on active connections in this phase
+            calculateNodeRoles(phase);
 
             // Clear pulses when changing phases (prevents orphan pulses)
             pulses = [];
@@ -1380,14 +1531,18 @@
             });
 
             // Update node positions
+            // Scale cluster spread based on org size - larger orgs need more separation
+            const orgSizeSpreadBoost = State.orgSize > 400 ? 0.25 : State.orgSize > 200 ? 0.15 : 0;
+            const effectiveSpread = Math.min(1, config.clusterSpread + orgSizeSpreadBoost);
+
             nodes.forEach(node => {
                 const dx = node.deptCenterX - centerX;
                 const dy = node.deptCenterY - centerY;
                 const nodeOffsetX = node.baseX - node.deptCenterX;
                 const nodeOffsetY = node.baseY - node.deptCenterY;
 
-                node.targetX = centerX + dx * config.clusterSpread + nodeOffsetX;
-                node.targetY = centerY + dy * config.clusterSpread + nodeOffsetY;
+                node.targetX = centerX + dx * effectiveSpread + nodeOffsetX;
+                node.targetY = centerY + dy * effectiveSpread + nodeOffsetY;
 
                 if (!animate) {
                     node.x = node.targetX;
@@ -1412,6 +1567,33 @@
             const isEgo = config.isEgoView || false;
             document.getElementById('orgLegend').style.display = isEgo ? 'none' : 'block';
             document.getElementById('egoLegend').style.display = isEgo ? 'block' : 'none';
+
+            // Show bridge/influencer legend items in Phase 2+
+            const showSignatures = phase >= 2 && !isEgo;
+            document.getElementById('legendBridge').style.display = showSignatures ? 'flex' : 'none';
+            document.getElementById('legendInfluencer').style.display = showSignatures ? 'flex' : 'none';
+
+            // Update counts
+            if (showSignatures) {
+                const bridgeCount = nodes.filter(n => n.isBridge).length;
+                const influencerCount = nodes.filter(n => n.isInfluencer).length;
+                document.getElementById('bridgeCount').textContent = bridgeCount;
+                document.getElementById('influencerCount').textContent = influencerCount;
+            }
+
+            // Update tie percentages (based on active connections)
+            if (!isEgo) {
+                const activeConns = connections.filter(c => c.isActiveInPhase(phase));
+                if (activeConns.length > 0) {
+                    const strongThreshold = 0.5;
+                    const strongCount = activeConns.filter(c => c.strength >= strongThreshold).length;
+                    const weakCount = activeConns.length - strongCount;
+                    const strongPercent = Math.round((strongCount / activeConns.length) * 100);
+                    const weakPercent = 100 - strongPercent;
+                    document.getElementById('strongTiePercent').textContent = strongPercent;
+                    document.getElementById('weakTiePercent').textContent = weakPercent;
+                }
+            }
         }
 
         
@@ -1651,7 +1833,7 @@
                 // Update and draw nodes
                 nodes.forEach(n => {
                     n.update(State.time);
-                    n.draw(State.time);
+                    n.draw(State.time, State.currentPhase);
                 });
 
                 // Draw problem labels (Phase 1 only, fades out in other phases)
